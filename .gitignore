@@ -1,6 +1,8 @@
 node_modules/
 dist/
 build/
+backend/tests/**/*.js
+backend/tests/**/*.js.map
 .env
 *.log
 npm-debug.log*
