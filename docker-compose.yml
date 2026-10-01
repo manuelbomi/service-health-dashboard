@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: shd-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shd_user
+      POSTGRES_PASSWORD: shd_pass
+      POSTGRES_DB: service_health
+    ports:
+      # Host port 55433 avoids clashing with any other local Postgres
+      # instance already bound to 5432/55432.
+      - '55433:5432'
+    volumes:
+      - shd-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U shd_user -d service_health']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    container_name: shd-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgres://shd_user:shd_pass@postgres:5432/service_health
+      SIMULATOR_INTERVAL_MS: 1500
+      NODE_ENV: production
+    ports:
+      - '4000:4000'
+
+volumes:
+  shd-postgres-data:
